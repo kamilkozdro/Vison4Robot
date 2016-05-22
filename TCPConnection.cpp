@@ -20,7 +20,7 @@ CTCPConnection::~CTCPConnection()
 		closeConnection();
 }
 
-int CTCPConnection::setupConnection(char* address, char* port)
+int CTCPConnection::setupConnection(const char* address, const char* port)
 {
 	struct addrinfo *result = NULL,
 		*ptr = NULL,
@@ -34,7 +34,7 @@ int CTCPConnection::setupConnection(char* address, char* port)
 	actionResult = getaddrinfo(address, port, &hints, &result);
 	if (actionResult != 0)
 	{
-		std::cout << "Wystapil blad podczas uzyskiwania parametrow adresu: " << actionResult << std::endl;
+		std::cout << "Wystapil blad podczas uzyskiwania parametrow polaczenia: " << actionResult << std::endl;
 		WSACleanup();
 		return 0;
 	}
@@ -64,7 +64,7 @@ int CTCPConnection::setupConnection(char* address, char* port)
 
 	if (ConnectSocket == INVALID_SOCKET)
 	{
-		std::cout << "Nie udalo sie polaczyc - zly socket";
+		std::cout << "Nie udalo sie polaczyc - zly socket\n";
 		WSACleanup();
 		return 0;
 	}

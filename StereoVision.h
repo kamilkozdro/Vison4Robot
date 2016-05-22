@@ -2,7 +2,9 @@
 #include "opencv2\opencv.hpp"
 #include <math.h>
 
-# define PI 3.14159265358979323846
+#define PI 3.14159265358979323846
+#define RGB 1
+#define HSV 2
 
 class CStereoVision
 {
@@ -16,6 +18,7 @@ public:
 	int openCameras(int leftCamID, int rightCamID);
 	int closeCameras();
 	int grabFrames();
+	int filterFrames(cv::Mat& left, cv::Mat& right);
 	int filterFrames_BGR(cv::Mat& left, cv::Mat& right);
 	int filterFrames_HSV(cv::Mat& left, cv::Mat& right);
 	int undistortRectifyFrames(cv::Mat &leftFrame, cv::Mat &rightFrame);

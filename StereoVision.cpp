@@ -75,9 +75,6 @@ int CStereoVision::loadFilter(char* path)
 	fileStream["max1"] >> filterMaxs[0];
 	fileStream["max2"] >> filterMaxs[1];
 	fileStream["max3"] >> filterMaxs[2];
-
-	std::cout << filterMins[0] << std::endl << filterMins[1] << std::endl << filterMins[2];
-	std::cout << filterMaxs[0] << std::endl << filterMaxs[1] << std::endl << filterMaxs[2];
 	fileStream.release();
 
 	return 1;
@@ -125,6 +122,19 @@ int CStereoVision::grabFrames()
 	return 1;
 }
 
+int CStereoVision::filterFrames(cv::Mat& left, cv::Mat& right)
+{
+	if (filterMethod == HSV)
+	{
+		cvtColor(leftFrame, leftFrame, CV_BGR2HSV);
+		cvtColor(rightFrame, rightFrame, CV_BGR2HSV);
+	}
+	inRange(leftFrame, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), leftFilteredFrame);
+	inRange(rightFrame, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), rightFilteredFrame);
+
+	return 1;
+}
+
 int CStereoVision::filterFrames_BGR(Mat& left, Mat& right)
 {
 
@@ -136,14 +146,12 @@ int CStereoVision::filterFrames_BGR(Mat& left, Mat& right)
 
 int CStereoVision::filterFrames_HSV(Mat& left, Mat& right)
 {
-	int min1 = 0, min2 = 50, min3 = 170;
-	int max1 = 255, max2 = 147, max3 = 255;
 	Mat leftFrameHSV, rightFrameHSV;
 
 	cvtColor(left, leftFrameHSV, CV_BGR2HSV);
 	cvtColor(right, rightFrameHSV, CV_BGR2HSV);
-	inRange(leftFrameHSV, Scalar(min1, min2, min3), Scalar(max1, max2, max3), leftFilteredFrame);
-	inRange(rightFrameHSV, Scalar(min1, min2, min3), Scalar(max1, max2, max3), rightFilteredFrame);
+	inRange(leftFrameHSV, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), leftFilteredFrame);
+	inRange(rightFrameHSV, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), rightFilteredFrame);
 
 	return 1;
 }

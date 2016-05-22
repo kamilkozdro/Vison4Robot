@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -7,7 +9,8 @@
 
 #define KAWASAKI_ADDRESS "11.12.1.30"
 #define KAWASAKI_PORT "9001"
-#define MIN_POINTS 4
+#define MIN_POINTS 3
+#define FIRST_POINTS_IGNORE 2
 
 using namespace cv;
 using namespace std;
@@ -28,7 +31,7 @@ void saveToFile(ofstream& file, Point3f& point)
 	}
 }
 
-int loadCordTransformation(char* path, Point3f trans, Point3f rot)
+int loadCordTransformation(char* path, Point3f &trans, Point3f &rot)
 {
 	FileStorage fileStream;
 	fileStream.open(path, FileStorage::READ);
@@ -81,6 +84,36 @@ Point3f averagePoints(vector<Point3f>& pointsVec)
 	return average;
 }
 
+bool checkRange(int number, int min, int max)
+{
+	if (number >= min && number <= max)
+		return true;
+	else
+	{
+		cout << "Liczba musi sie zawierac w przedziale: <" << min << ";" << max << ">\n";
+		return false;
+	}
+}
+
+int inputNumber(int minNumber, int maxNumber)
+{
+	int number;
+	do
+	{
+		cin >> number;
+		while (cin.fail())
+		{
+			cin.clear();
+			cin.ignore(numeric_limits<std::streamsize>::max(), '\n');
+			cout << "Zla liczba, wprowadz ponownie: ";
+			cin >> number;
+		}
+	} while (!checkRange(number, minNumber, maxNumber));
+
+	return number;
+}
+
+
 /*bool checkWorkingZone(Point3f point)
 {
 	Point3f firstCorner(-686, 3, -100);
@@ -100,21 +133,39 @@ Point3f averagePoints(vector<Point3f>& pointsVec)
 
 int main()
 {
-	ofstream plik;
-	plik.open("pomiarZ_skoki.txt", std::ios::out);
+	//ofstream plik;
+	//plik.open("pomiarZ_skoki.txt", std::ios::out);
 	CStereoVision stereoVision;
 	Mat detectedPoint4D;
 	Point3f detectedPoint3D, coordsTrans, coordsRot;
 	CTCPConnection robotConnection;
 	vector<Point3f> points;
+	int firstPointsToIgnore = 0;
+	string robotAddress, robotPort;
 	namedWindow("leftCam");
-	//namedWindow("rightCam");
-
-	if (stereoVision.initStereoVision("calibrationParameters.xml", "filterParameters.xml", 2, 1) != 1)
+	
+	do
+	{
+		int leftID, rightID;
+		cout << "Podaj ID lewej kamery: ";
+		leftID = inputNumber(0, 10);
+		cout << "Podaj ID prawej kamery: ";
+		leftID = inputNumber(0, 10);
+	} while (stereoVision.initStereoVision("calibrationParameters.xml", "filterParameters.xml", 2, 1) != 1);
+	
+	if (!loadCordTransformation("coordinateTransformation.xml", coordsTrans, coordsRot))
 		return 0;
+	cout << "Wczytano dane z plikow\n";
+	
+	do
+	{
+		cout << "Podaj adres IP robota: ";
+		cin >> robotAddress;
+		cout << "Podaj port robota: ";
+		cin >> robotPort;
+	} while (!robotConnection.setupConnection(robotAddress.c_str(), robotPort.c_str()));
+	
 	/*
-	if (!loadCordTransformation("coordinateTransformation.yml", coordsTrans, coordsRot))
-		return 0;
 	if (!robotConnection.setupConnection(KAWASAKI_ADDRESS, KAWASAKI_PORT))
 		return 0;
 	*/
@@ -122,38 +173,44 @@ int main()
 	{
 		stereoVision.grabFrames();
 		stereoVision.undistortRectifyFrames(stereoVision.leftFrame, stereoVision.rightFrame);
-		stereoVision.filterFrames_BGR(stereoVision.leftTransformedFrame, stereoVision.rightTransformedFrame);
+		stereoVision.filterFrames(stereoVision.leftTransformedFrame, stereoVision.rightTransformedFrame);
 		imshow("leftCam", stereoVision.leftFilteredFrame);
-		//imshow("rightCam", stereoVision.rightFrame);
 		detectedPoint3D = stereoVision.triangulate(stereoVision.leftFilteredFrame, stereoVision.rightFilteredFrame);
 		if (detectedPoint3D == Point3f(0, 0, 0))
 		{
-			//points.clear();
+			points.clear();
+			firstPointsToIgnore = 0;
 			continue;
-		}	
-		/*
-		detectedPoint3D = stereoVision.coordinateTransform(detectedPoint3D, Point3f(-1000, -1000, 800), Point3f(-135, 0, 0));	// punkt w odniesieniu do nowego ukl. wsp.
+		}
+
+		if (firstPointsToIgnore < FIRST_POINTS_IGNORE)
+		{
+			firstPointsToIgnore++;
+			continue;
+		}
+		
+		//cout << detectedPoint3D << endl;
 		points.push_back(detectedPoint3D);			
 		if (points.size() >= MIN_POINTS && robotConnection.isConnected())
 		{
 			Point3f pointToSend = averagePoints(points);
+			pointToSend = stereoVision.coordinateTransform(pointToSend, coordsTrans, coordsRot);	// punkt w odniesieniu do nowego ukl. wsp.
 			points.clear();
-			cout << "WYSYLAM...\n";
 			std::string dataToSend = std::to_string(pointToSend.x) + ";" +
 				std::to_string(pointToSend.y) + ";" +
-				std::to_string(pointToSend.z + 50) + ";";
+				std::to_string(pointToSend.z+150) + ";";
 			if (robotConnection.sendData(dataToSend.c_str()) != 0)
 			{
 				cout << "WYSLANO:\n" << dataToSend.c_str() << endl;
 			}
 		}
-		*/
+		
 		cout << detectedPoint3D << endl;		
-		saveToFile(plik, detectedPoint3D);
+		//saveToFile(plik, detectedPoint3D);
 	}
 
 	cv::waitKey();
-	plik.close();
+	//plik.close();
 
 	return 1;
 }

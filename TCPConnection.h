@@ -28,7 +28,7 @@ private:
 
 public:
 	inline int isConnected() {return connected;};
-	int setupConnection(char* address, char* port);
+	int setupConnection(const char* address, const char* port);
 	int sendData(const char* data);
 	int closeConnection();
 
