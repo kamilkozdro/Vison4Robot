@@ -133,30 +133,31 @@ int inputNumber(int minNumber, int maxNumber)
 
 int main()
 {
-	//ofstream plik;
-	//plik.open("pomiarZ_skoki.txt", std::ios::out);
+	ofstream plik;
+	plik.open("pomiarX_skoki.txt", std::ios::out);
 	CStereoVision stereoVision;
 	Mat detectedPoint4D;
 	Point3f detectedPoint3D, coordsTrans, coordsRot;
 	CTCPConnection robotConnection;
 	vector<Point3f> points;
 	int firstPointsToIgnore = 0;
+	int leftID, rightID;
 	string robotAddress, robotPort;
 	namedWindow("leftCam");
-	
+	namedWindow("rightCam");
+
 	do
 	{
-		int leftID, rightID;
 		cout << "Podaj ID lewej kamery: ";
 		leftID = inputNumber(0, 10);
 		cout << "Podaj ID prawej kamery: ";
-		leftID = inputNumber(0, 10);
-	} while (stereoVision.initStereoVision("calibrationParameters.xml", "filterParameters.xml", 2, 1) != 1);
+		rightID = inputNumber(0, 10);
+	} while (stereoVision.initStereoVision("calibrationParameters.xml", "filterParameters.xml", leftID, rightID) != 1);
 	
 	if (!loadCordTransformation("coordinateTransformation.xml", coordsTrans, coordsRot))
 		return 0;
 	cout << "Wczytano dane z plikow\n";
-	
+	/*
 	do
 	{
 		cout << "Podaj adres IP robota: ";
@@ -165,16 +166,28 @@ int main()
 		cin >> robotPort;
 	} while (!robotConnection.setupConnection(robotAddress.c_str(), robotPort.c_str()));
 	
-	/*
+	
 	if (!robotConnection.setupConnection(KAWASAKI_ADDRESS, KAWASAKI_PORT))
 		return 0;
 	*/
+	
 	while ((waitKey(3) == -1))
 	{
 		stereoVision.grabFrames();
 		stereoVision.undistortRectifyFrames(stereoVision.leftFrame, stereoVision.rightFrame);
-		stereoVision.filterFrames(stereoVision.leftTransformedFrame, stereoVision.rightTransformedFrame);
+		stereoVision.drawParallelLines(stereoVision.leftTransformedFrame);
+		stereoVision.drawParallelLines(stereoVision.rightTransformedFrame);
+		imshow("leftCam", stereoVision.leftTransformedFrame);
+		imshow("rightCam", stereoVision.rightTransformedFrame);
+	}
+	
+	while ((waitKey(3) == -1))
+	{
+		stereoVision.grabFrames();
+		stereoVision.undistortRectifyFrames(stereoVision.leftFrame, stereoVision.rightFrame);
+		stereoVision.filterFrames(stereoVision.leftTransformedFrame, stereoVision.rightTransformedFrame, stereoVision.filterMethod);
 		imshow("leftCam", stereoVision.leftFilteredFrame);
+		imshow("rightCam", stereoVision.rightFilteredFrame);
 		detectedPoint3D = stereoVision.triangulate(stereoVision.leftFilteredFrame, stereoVision.rightFilteredFrame);
 		if (detectedPoint3D == Point3f(0, 0, 0))
 		{
@@ -183,6 +196,9 @@ int main()
 			continue;
 		}
 
+		saveToFile(plik, detectedPoint3D);
+		cout << detectedPoint3D << endl;
+		/*
 		if (firstPointsToIgnore < FIRST_POINTS_IGNORE)
 		{
 			firstPointsToIgnore++;
@@ -204,13 +220,12 @@ int main()
 				cout << "WYSLANO:\n" << dataToSend.c_str() << endl;
 			}
 		}
+		*/		
 		
-		cout << detectedPoint3D << endl;		
-		//saveToFile(plik, detectedPoint3D);
 	}
 
 	cv::waitKey();
-	//plik.close();
+	plik.close();
 
 	return 1;
 }

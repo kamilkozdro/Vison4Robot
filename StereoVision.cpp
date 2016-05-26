@@ -122,9 +122,9 @@ int CStereoVision::grabFrames()
 	return 1;
 }
 
-int CStereoVision::filterFrames(cv::Mat& left, cv::Mat& right)
+void CStereoVision::filterFrames(cv::Mat& left, cv::Mat& right, int method)
 {
-	if (filterMethod == HSV)
+	if (method == HSV)
 	{
 		cvtColor(leftFrame, leftFrame, CV_BGR2HSV);
 		cvtColor(rightFrame, rightFrame, CV_BGR2HSV);
@@ -132,36 +132,14 @@ int CStereoVision::filterFrames(cv::Mat& left, cv::Mat& right)
 	inRange(leftFrame, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), leftFilteredFrame);
 	inRange(rightFrame, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), rightFilteredFrame);
 
-	return 1;
-}
-
-int CStereoVision::filterFrames_BGR(Mat& left, Mat& right)
-{
-
-	inRange(left, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), leftFilteredFrame);
-	inRange(right, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), rightFilteredFrame);
-
-	return 1;
-}
-
-int CStereoVision::filterFrames_HSV(Mat& left, Mat& right)
-{
-	Mat leftFrameHSV, rightFrameHSV;
-
-	cvtColor(left, leftFrameHSV, CV_BGR2HSV);
-	cvtColor(right, rightFrameHSV, CV_BGR2HSV);
-	inRange(leftFrameHSV, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), leftFilteredFrame);
-	inRange(rightFrameHSV, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), rightFilteredFrame);
-
-	return 1;
 }
 
 int CStereoVision::undistortRectifyFrames(Mat &leftImage, Mat &rightImage)
 {
 	Mat leftMapX, leftMapY, rightMapX, rightMapY;
 
-	initUndistortRectifyMap(leftCameraMat, leftCameraDistorsion, leftRectificationMat, leftProjectionMat, imageSize, CV_32FC1, leftMapX, leftMapY);
-	initUndistortRectifyMap(rightCameraMat, rightCameraDistorsion, rightRectificationMat, rightProjectionMat, imageSize, CV_32FC1, rightMapX, rightMapY);
+	initUndistortRectifyMap(leftCameraMat, leftCameraDistorsion, leftRectificationMat, leftProjectionMat, imageSize, CV_32F, leftMapX, leftMapY);
+	initUndistortRectifyMap(rightCameraMat, rightCameraDistorsion, rightRectificationMat, rightProjectionMat, imageSize, CV_32F, rightMapX, rightMapY);
 
 	remap(leftImage, leftTransformedFrame, leftMapX, leftMapY, INTER_LINEAR);
 	remap(rightImage, rightTransformedFrame, rightMapX, rightMapY, INTER_LINEAR);
@@ -185,11 +163,11 @@ void CStereoVision::showImage(char* windowName, Mat image, bool waitForKey = 0)
 		waitKey();
 }
 
-void CStereoVision::drawParallerLines(Mat & image)
+void CStereoVision::drawParallelLines(Mat & image)
 {
 	Size imageSize = image.size();
 	
-	for (int i = 0; i < imageSize.height; i+=64)
+	for (int i = 0; i < imageSize.height; i+=32)
 	{
 		line(image, Point(0, i), Point(imageSize.width, i), Scalar(0, 255, 0),1);
 	}

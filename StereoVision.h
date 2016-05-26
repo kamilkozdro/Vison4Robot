@@ -18,13 +18,11 @@ public:
 	int openCameras(int leftCamID, int rightCamID);
 	int closeCameras();
 	int grabFrames();
-	int filterFrames(cv::Mat& left, cv::Mat& right);
-	int filterFrames_BGR(cv::Mat& left, cv::Mat& right);
-	int filterFrames_HSV(cv::Mat& left, cv::Mat& right);
+	void filterFrames(cv::Mat& left, cv::Mat& right, int method);
 	int undistortRectifyFrames(cv::Mat &leftFrame, cv::Mat &rightFrame);
 	void showImage(cv::Mat image, bool waitForKey);
 	void showImage(char* windowName, cv::Mat image, bool waitForKey);
-	void drawParallerLines(cv::Mat &image);
+	void drawParallelLines(cv::Mat &image);
 	cv::Point2f findPoint(cv::Mat& img);
 	float getPixelValue(cv::Mat& img, int x, int y);
 	cv::Point3f calcPoint3D(cv::Mat& point4D);
