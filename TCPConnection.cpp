@@ -6,12 +6,6 @@ CTCPConnection::CTCPConnection()
 {
 	connected = false;
 	actionResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	/*
-	if (state != 0)
-	{
-		std::cout << "Wystpail blad inicjalizacji WSA: " << actionResult << std::endl;
-	}
-	*/
 }
 
 CTCPConnection::~CTCPConnection()

@@ -7,10 +7,10 @@
 #include "StereoVision.h"
 #include "TCPConnection.h"
 
-#define KAWASAKI_ADDRESS "11.12.1.30"
-#define KAWASAKI_PORT "9001"
-#define MIN_POINTS 3
-#define FIRST_POINTS_IGNORE 2
+#define KAWASAKI_ADDRESS "11.12.1.30"	// przydatne dla stalego adresu IP robota
+#define KAWASAKI_PORT "9001"			// przydatne dla stalego portu nasluchiwania robota
+#define MIN_POINTS 3					// min. liczba probek do sredniej
+#define FIRST_POINTS_IGNORE 2			// liczba pierwszych punktow do ignorowania
 
 using namespace cv;
 using namespace std;
@@ -51,22 +51,6 @@ int loadCordTransformation(char* path, Point3f &trans, Point3f &rot)
 	fileStream.release();
 
 	return 1;
-}
-
-Point3f calcPoint3D(Mat& point4D)
-{
-	Point3f point3D;
-	if (getPixelValue(point4D, 3, 1) == 0)
-		point3D = Point3f(0, 0, 0);
-	else
-	{
-		float w = getPixelValue(point4D, 4, 1);
-		point3D.x = getPixelValue(point4D, 1, 1) / w;
-		point3D.y = getPixelValue(point4D, 2, 1) / w;
-		point3D.z = getPixelValue(point4D, 3, 1) / w;
-	}
-
-	return point3D;
 }
 
 Point3f averagePoints(vector<Point3f>& pointsVec)
@@ -113,28 +97,12 @@ int inputNumber(int minNumber, int maxNumber)
 	return number;
 }
 
-
-/*bool checkWorkingZone(Point3f point)
-{
-	Point3f firstCorner(-686, 3, -100);
-	Point3f secondCorner(-1083,-377,200);
-
-	if (point.x >= firstCorner.x && point.x <= secondCorner.x)
-	{
-		if (point.y >= firstCorner.y && point.y <= secondCorner.y)
-		{
-			if (point.z >= firstCorner.z && point.z <= secondCorner.z)
-				return true;
-		}
-	}
-
-	return false;
-}*/
-
 int main()
 {
+	/*	//obiekt obslugujacy zapis do pliku - przydatne przy diagnozowaniu/testowaniu
 	ofstream plik;
-	plik.open("pomiarX_skoki.txt", std::ios::out);
+	plik.open("nazwa_pliku.txt", std::ios::out);
+	*/
 	CStereoVision stereoVision;
 	Mat detectedPoint4D;
 	Point3f detectedPoint3D, coordsTrans, coordsRot;
@@ -157,7 +125,7 @@ int main()
 	if (!loadCordTransformation("coordinateTransformation.xml", coordsTrans, coordsRot))
 		return 0;
 	cout << "Wczytano dane z plikow\n";
-	/*
+	//opcja podawania za kazdym razem adresu IP i portu robota
 	do
 	{
 		cout << "Podaj adres IP robota: ";
@@ -166,12 +134,12 @@ int main()
 		cin >> robotPort;
 	} while (!robotConnection.setupConnection(robotAddress.c_str(), robotPort.c_str()));
 	
-	
+	/*	//opcja do stalego adresu IP i portu robota
 	if (!robotConnection.setupConnection(KAWASAKI_ADDRESS, KAWASAKI_PORT))
 		return 0;
 	*/
-	
-	while ((waitKey(3) == -1))
+	//sprawdzenie jakosci rektyfikacji
+	while ((waitKey(10) == -1))
 	{
 		stereoVision.grabFrames();
 		stereoVision.undistortRectifyFrames(stereoVision.leftFrame, stereoVision.rightFrame);
@@ -181,7 +149,7 @@ int main()
 		imshow("rightCam", stereoVision.rightTransformedFrame);
 	}
 	
-	while ((waitKey(3) == -1))
+	while ((waitKey(10) == -1))
 	{
 		stereoVision.grabFrames();
 		stereoVision.undistortRectifyFrames(stereoVision.leftFrame, stereoVision.rightFrame);
@@ -189,43 +157,42 @@ int main()
 		imshow("leftCam", stereoVision.leftFilteredFrame);
 		imshow("rightCam", stereoVision.rightFilteredFrame);
 		detectedPoint3D = stereoVision.triangulate(stereoVision.leftFilteredFrame, stereoVision.rightFilteredFrame);
+		// jesli nie wykryto punktu
 		if (detectedPoint3D == Point3f(0, 0, 0))
 		{
 			points.clear();
 			firstPointsToIgnore = 0;
 			continue;
 		}
+		//	saveToFile(plik, detectedPoint3D);	//zapis punktu polozenia do pliku
 
-		saveToFile(plik, detectedPoint3D);
-		cout << detectedPoint3D << endl;
-		/*
+		//pierwsze wykryte punkty sa ignorowane
 		if (firstPointsToIgnore < FIRST_POINTS_IGNORE)
 		{
 			firstPointsToIgnore++;
 			continue;
 		}
 		
-		//cout << detectedPoint3D << endl;
-		points.push_back(detectedPoint3D);			
+		points.push_back(detectedPoint3D);	// dodaj punkt do bufora punktow
+		// jesli jest wystarczajaca liczba probek i jest polaczenie...
 		if (points.size() >= MIN_POINTS && robotConnection.isConnected())
 		{
-			Point3f pointToSend = averagePoints(points);
-			pointToSend = stereoVision.coordinateTransform(pointToSend, coordsTrans, coordsRot);	// punkt w odniesieniu do nowego ukl. wsp.
-			points.clear();
+			Point3f pointToSend = averagePoints(points);	// srednia z bufora probek
+			cout << "KAMERY:  " << pointToSend << endl;	// wydrukuj w konsoli polozenie punktu wzgl. kamer
+			pointToSend = stereoVision.coordinateTransform(pointToSend, coordsTrans, coordsRot);	// punkt w odniesieniu do ukl. robota
+			cout << "ROBOT:  " << pointToSend << endl;	// wydrukuj w konsoli polozenie punktu wzgl. robota
+			points.clear();	// wyczysc bufor
 			std::string dataToSend = std::to_string(pointToSend.x) + ";" +
 				std::to_string(pointToSend.y) + ";" +
-				std::to_string(pointToSend.z+150) + ";";
+				std::to_string(pointToSend.z) + ";";	// mozna wprowadzic staly offset, np. dla osi Z
+			// wyslij string dataToSend zamieniony na const char
 			if (robotConnection.sendData(dataToSend.c_str()) != 0)
 			{
 				cout << "WYSLANO:\n" << dataToSend.c_str() << endl;
 			}
-		}
-		*/		
-		
+		}		
 	}
-
-	cv::waitKey();
-	plik.close();
+	//plik.close();	// zamkniecie pliku
 
 	return 1;
 }

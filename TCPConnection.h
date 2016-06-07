@@ -20,7 +20,6 @@ public:
 
 	WSADATA wsaData;
 	SOCKET ConnectSocket;
-	char *sendbuf;
 
 private:
 	int actionResult;

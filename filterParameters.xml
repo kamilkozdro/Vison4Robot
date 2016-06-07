@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <opencv_storage>
-<Date>"Thu May 26 12:30:55 2016&#x0a;"</Date>
-<method>HSV</method>
-<min1>128</min1>
-<min2>0</min2>
-<min3>175</min3>
-<max1>255</max1>
-<max2>255</max2>
+<Date>"Mon May 30 17:28:47 2016&#x0a;"</Date>
+<method>2</method>
+<min1>150</min1>
+<min2>65</min2>
+<min3>250</min3>
+<max1>180</max1>
+<max2>194</max2>
 <max3>255</max3>
 </opencv_storage>

@@ -37,14 +37,11 @@ public:
 	int filterMaxs[3];
 	cv::VideoCapture leftCam, rightCam;
 	cv::Mat leftCameraMat, leftCameraDistorsion, rightCameraMat, rightCameraDistorsion;
-	cv::Mat rotationMat, leftRectificationMat, leftProjectionMat,
+	cv::Mat leftRectificationMat, leftProjectionMat,
 					rightRectificationMat, rightProjectionMat;
-	cv::Mat disparityToDepthMat;
 	cv::Mat leftFrame, rightFrame;
 	cv::Mat leftFilteredFrame, rightFilteredFrame;
 	cv::Mat leftTransformedFrame, rightTransformedFrame;
-	cv::Mat disparityMap;
-	cv::Rect leftValidPixROI, rightValidPixROI;
 	cv::Size imageSize;
 	cv::Point3f coordnateTrans;
 	cv::Point3f coordnateRot;

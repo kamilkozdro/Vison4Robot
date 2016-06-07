@@ -13,7 +13,7 @@ CStereoVision::~CStereoVision()
 
 }
 
-int CStereoVision::initStereoVision(char* settingsPath, char* filterParamsPath, int leftCamID = -1, int rightCamID = -1)
+int CStereoVision::initStereoVision(char* settingsPath, char* filterParamsPath, int leftCamID, int rightCamID)
 {
 	if (loadSettings(settingsPath) != 1)
 		return 0;		
@@ -43,14 +43,10 @@ int CStereoVision::loadSettings(char* path)
 	fileStream["leftCameraDistorsion"] >> leftCameraDistorsion;
 	fileStream["rightCameraMat"] >> rightCameraMat;
 	fileStream["rightCameraDistorsion"] >> rightCameraDistorsion;
-	fileStream["rotationMat"] >> rotationMat;
 	fileStream["leftRectificationMat"] >> leftRectificationMat;
 	fileStream["leftProjectionMat"] >> leftProjectionMat;
 	fileStream["rightRectificationMat"] >> rightRectificationMat;
 	fileStream["rightProjectionMat"] >> rightProjectionMat;
-	fileStream["disparity2DepthMat"] >> disparityToDepthMat;
-	fileStream["leftValidPixROI"] >> leftValidPixROI;
-	fileStream["rightValidPixROI"] >> rightValidPixROI;
 	fileStream["imageSize"] >> imageSize;
 	fileStream.release();
 
@@ -129,6 +125,9 @@ void CStereoVision::filterFrames(cv::Mat& left, cv::Mat& right, int method)
 		cvtColor(leftFrame, leftFrame, CV_BGR2HSV);
 		cvtColor(rightFrame, rightFrame, CV_BGR2HSV);
 	}
+	else if (method == RGB);
+	else return;
+
 	inRange(leftFrame, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), leftFilteredFrame);
 	inRange(rightFrame, Scalar(filterMins[0], filterMins[1], filterMins[2]), Scalar(filterMaxs[0], filterMaxs[1], filterMaxs[2]), rightFilteredFrame);
 
